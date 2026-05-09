@@ -7,7 +7,7 @@ import EntityManager from '@/components/Ledger/PartySelector'
 import LedgerEntryForm from '@/components/Ledger/LedgerEntryForm'
 import LedgerTable from '@/components/Ledger/LedgerTable'
 import { useToast } from '@/components/Toast'
-import { Loader2, Calendar } from 'lucide-react'
+import { Loader2, Calendar, Search, X } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import { useRouter } from 'next/navigation'
@@ -33,6 +33,9 @@ export default function DashboardPage() {
   const [editingEntry, setEditingEntry] = useState<Entry | undefined>(undefined)
   const [selectedMonth, setSelectedMonth] = useState('All')
   const [loading, setLoading] = useState(true)
+  const [masterSearch, setMasterSearch] = useState('')
+  const [masterResults, setMasterResults] = useState<Entry[]>([])
+  const [masterChecking, setMasterChecking] = useState(false)
   const supabase = createClient()
 
   const fetchData = useCallback(async () => {
@@ -79,6 +82,33 @@ export default function DashboardPage() {
     if (error) throw error
     fetchData()
   }
+
+  useEffect(() => {
+    const q = masterSearch.trim()
+    if (!q) {
+      setMasterResults([])
+      setMasterChecking(false)
+      return
+    }
+
+    setMasterChecking(true)
+    const timeout = setTimeout(async () => {
+      const { data } = await supabase
+        .from('ledger_entries')
+        .select('*, parties(name)')
+        .ilike('utr', `%${q}%`)
+        .order('date', { ascending: true })
+      
+      if (data) {
+        setMasterResults(data.map(d => ({ ...d, party_name: d.parties?.name })))
+      } else {
+        setMasterResults([])
+      }
+      setMasterChecking(false)
+    }, 500)
+
+    return () => clearTimeout(timeout)
+  }, [masterSearch, supabase])
 
   const handleDeleteParty = async (id: string) => {
     const { error } = await supabase.from('parties').delete().eq('id', id)
@@ -128,9 +158,10 @@ export default function DashboardPage() {
 
   const handleExport = async (type: 'csv' | 'pdf' | 'image' | 'print') => {
     if (type === 'print') { window.print(); return }
+    const exportData = masterSearch ? masterResults : entries
     if (type === 'csv') {
       let csv = 'Date,Party,Mode,Source,UTR,Received,Commission,Net,Paid,Pending\n'
-      const entriesWithBalance = [...entries].map(e => ({ ...e }))
+      const entriesWithBalance = [...exportData].map(e => ({ ...e }))
       const chronological = [...entriesWithBalance].sort((a, b) => {
         return new Date(a.date).getTime() - new Date(b.date).getTime()
       })
@@ -196,6 +227,36 @@ export default function DashboardPage() {
 
   return (
     <div className="animate-in">
+      {/* Master Search */}
+      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--surface-2)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+        <Search size={18} style={{ color: 'var(--primary)' }} />
+        <input 
+          type="text" 
+          placeholder="Master Search: Find any transaction by UTR number across all parties and months..."
+          value={masterSearch}
+          onChange={e => setMasterSearch(e.target.value)}
+          style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.95rem', color: 'var(--foreground)' }}
+        />
+        {masterChecking && <Loader2 size={16} className="animate-spin text-muted" />}
+        {masterSearch && <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setMasterSearch('')}><X size={16} /></button>}
+      </div>
+
+      {masterSearch && (
+        <div className="card mb-4" style={{ border: '2px solid var(--primary)', animation: 'slideUp 0.3s ease-out' }}>
+          <div className="flex-between mb-3">
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em' }}>Master Search Results</h3>
+            <span className="badge badge-neutral">{masterResults.length} found</span>
+          </div>
+          {masterChecking ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}><Loader2 size={24} className="animate-spin text-muted" /></div>
+          ) : masterResults.length > 0 ? (
+            <LedgerTable entries={masterResults} parties={parties} isAllParties={true} businessName={businessName} onEdit={(e) => setEditingEntry(e)} onDelete={handleDeleteEntry} onExport={handleExport} />
+          ) : (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)', fontSize: '0.9rem' }}>No transactions found matching "{masterSearch}".</div>
+          )}
+        </div>
+      )}
+
       <SummaryCards totalReceived={totals.received} totalPaid={totals.paid} totalCommission={totals.commission} totalPending={totals.pending} />
 
       {/* Month Filter */}
