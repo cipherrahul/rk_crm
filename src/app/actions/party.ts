@@ -8,7 +8,7 @@ export async function createPartyWithAccount(name: string, email?: string, passw
   const supabase = await createServerClient()
   const { data: { user: adminUser } } = await supabase.auth.getUser()
 
-  if (!adminUser) throw new Error('Unauthorized')
+  if (!adminUser) return { error: 'Unauthorized' }
 
   // 1. If email and password provided, create Auth User via Admin Client
   let authUserId = null
@@ -21,7 +21,7 @@ export async function createPartyWithAccount(name: string, email?: string, passw
       user_metadata: { role: 'party', full_name: name }
     })
 
-    if (authError) throw authError
+    if (authError) return { error: authError.message }
     authUserId = authData.user?.id
 
     // Create profile for the new user with 'party' role
@@ -47,7 +47,7 @@ export async function createPartyWithAccount(name: string, email?: string, passw
       commission_rate: commissionRate || 0.5
     })
 
-  if (partyError) throw partyError
+  if (partyError) return { error: partyError.message }
 
   revalidatePath('/dashboard')
   return { success: true }

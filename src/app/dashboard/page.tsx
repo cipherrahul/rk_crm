@@ -73,7 +73,10 @@ export default function DashboardPage() {
 
 
   const handleAddParty = async (name: string, email?: string, password?: string, commissionRate?: number) => {
-    await createPartyWithAccount(name, email, password, commissionRate)
+    const result = await createPartyWithAccount(name, email, password, commissionRate)
+    if (result?.error) {
+      throw new Error(result.error)
+    }
     fetchData()
   }
 
