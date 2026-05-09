@@ -386,7 +386,7 @@ tr { transition: background var(--transition); }
 tbody tr:hover td { background: var(--surface-2); }
 tr:last-child td { border-bottom: none; }
 
-.table-actions { display: flex; gap: 0.35rem; opacity: 0; transition: opacity var(--transition); }
+.table-actions { display: flex; gap: 0.35rem; opacity: 1; transition: opacity var(--transition); }
 tbody tr:hover .table-actions { opacity: 1; }
 
 /* ── Badges ── */
