@@ -116,9 +116,9 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
                       <td className="text-muted text-sm">{idx + 1}</td>
                       <td style={{ fontWeight: 600 }}>{name}</td>
                       <td style={{ color: 'var(--success)', fontWeight: 600 }}>{fmt(data.received)}</td>
-                      <td>{fmt(data.paid)}</td>
+                      <td style={{ color: 'var(--warning)' }}>{fmt(data.paid)}</td>
                       <td>
-                        <span className={`badge ${data.pending > 0 ? 'badge-pending' : 'badge-success'}`}>
+                        <span className={`badge ${data.pending > 0 ? 'badge-error' : 'badge-success'}`}>
                           {fmt(data.pending)}
                         </span>
                       </td>
@@ -147,7 +147,20 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
     )
   }
 
-  const filtered = entries.filter(e => {
+  const entriesWithBalance = [...entries].map(e => ({ ...e }))
+  const chronological = [...entriesWithBalance].sort((a, b) => {
+    return new Date(a.date).getTime() - new Date(b.date).getTime()
+  })
+
+  let currentBalance = 0
+  for (const e of chronological) {
+    const com = (e.received * e.commission_rate) / 100
+    const net = e.received - com
+    currentBalance += (net - e.paid)
+    ;(e as any).runningPending = currentBalance
+  }
+
+  const filtered = entriesWithBalance.filter(e => {
     const q = search.toLowerCase()
     return !q || e.utr?.toLowerCase().includes(q) || e.mode?.toLowerCase().includes(q) || e.source?.toLowerCase().includes(q)
   })
@@ -194,7 +207,7 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
               {filtered.map(e => {
                 const com = (e.received * e.commission_rate) / 100
                 const net = e.received - com
-                const pending = net - e.paid
+                const pending = (e as any).runningPending
                 return (
                   <tr key={e.id}>
                     <td className="text-sm mono" style={{ whiteSpace: 'nowrap' }}>{e.date}</td>
@@ -209,9 +222,9 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
                       <div className="text-xs text-muted">{e.commission_rate}%</div>
                     </td>
                     <td style={{ fontWeight: 700 }}>{fmt(net)}</td>
-                    <td style={{ color: 'var(--success)' }}>{fmt(e.paid)}</td>
+                    <td style={{ color: 'var(--warning)' }}>{fmt(e.paid)}</td>
                     <td>
-                      <span className={`badge ${pending > 0 ? 'badge-pending' : 'badge-success'}`}>
+                      <span className={`badge ${pending > 0 ? 'badge-error' : 'badge-success'}`}>
                         {fmt(pending)}
                       </span>
                     </td>
