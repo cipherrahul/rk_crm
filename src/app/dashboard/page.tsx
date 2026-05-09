@@ -260,7 +260,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <SummaryCards totalReceived={totals.received} totalPaid={totals.paid} totalCommission={totals.commission} totalPending={totals.pending} />
+      {!masterSearch && (
+        <>
+          <SummaryCards totalReceived={totals.received} totalPaid={totals.paid} totalCommission={totals.commission} totalPending={totals.pending} />
 
       {/* Month Filter */}
       <div className="card mb-3" style={{ padding: '0.75rem 1rem' }}>
@@ -307,6 +309,8 @@ export default function DashboardPage() {
         </div>
       ) : (
         <LedgerTable entries={entries} parties={parties} isAllParties={!selectedPartyId} businessName={businessName} onEdit={(e) => setEditingEntry(e)} onDelete={handleDeleteEntry} onExport={handleExport} />
+      )}
+        </>
       )}
     </div>
   )
