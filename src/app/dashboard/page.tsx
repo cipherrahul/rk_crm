@@ -97,6 +97,17 @@ export default function DashboardPage() {
   const handleEntrySubmit = async (formData: Omit<Entry, 'id' | 'party_id' | 'party_name' | 'parties'>) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not logged in')
+
+    // Check UTR Uniqueness
+    if (formData.utr && formData.utr.trim() !== '' && formData.utr.trim() !== '-' && formData.utr.trim() !== '—') {
+      const query = supabase.from('ledger_entries').select('id').eq('utr', formData.utr.trim())
+      if (editingEntry) query.neq('id', editingEntry.id)
+      const { data: existing } = await query
+      if (existing && existing.length > 0) {
+        throw new Error(`UTR "${formData.utr.trim()}" already exists. UTR must be unique.`)
+      }
+    }
+
     if (editingEntry) {
       const { error } = await supabase.from('ledger_entries').update(formData).eq('id', editingEntry.id)
       if (error) throw error

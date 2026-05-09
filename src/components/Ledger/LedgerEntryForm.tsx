@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, X, Calendar, Landmark, CreditCard, Hash, IndianRupee, Percent, Calculator } from 'lucide-react'
+import { Save, X, Calendar, Landmark, CreditCard, Hash, IndianRupee, Percent, Calculator, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/Toast'
+import { createClient } from '@/utils/supabase/client'
 
 interface Source { id: string; name: string }
 interface EntryData {
@@ -25,6 +26,9 @@ function fmt(n: number) { return '₹' + n.toLocaleString('en-IN', { minimumFrac
 export default function LedgerEntryForm({ partyId, partyName, defaultCommissionRate = 0.5, sources, onSubmit, initialData, onCancel }: EntryFormProps) {
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
+  const [utrChecking, setUtrChecking] = useState(false)
+  const [utrError, setUtrError] = useState('')
+  const supabase = createClient()
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     mode: 'Cash',
@@ -57,6 +61,31 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
     }
   }, [initialData])
 
+  useEffect(() => {
+    const utr = formData.utr.trim()
+    if (!utr || utr === '-' || utr === '—') {
+      setUtrError('')
+      setUtrChecking(false)
+      return
+    }
+
+    setUtrChecking(true)
+    setUtrError('')
+
+    const timeout = setTimeout(async () => {
+      const query = supabase.from('ledger_entries').select('id').eq('utr', utr)
+      if (initialData?.id) query.neq('id', initialData.id)
+      
+      const { data, error } = await query
+      if (!error && data && data.length > 0) {
+        setUtrError('This UTR already exists')
+      }
+      setUtrChecking(false)
+    }, 500)
+
+    return () => clearTimeout(timeout)
+  }, [formData.utr, initialData?.id, supabase])
+
   const received = parseFloat(formData.received) || 0
   const paid = parseFloat(formData.paid) || 0
   const commRate = parseFloat(formData.commission_rate) || 0
@@ -72,20 +101,24 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
       await onSubmit({ ...formData, party_id: partyId, received, paid, commission_rate: commRate })
       if (!initialData) setFormData(f => ({ ...f, utr: '', received: '', paid: '' }))
       toast(initialData ? 'Entry updated' : 'Entry added successfully', 'success')
-    } catch {
-      toast('Failed to save entry', 'error')
+    } catch (err: any) {
+      toast(err.message || 'Failed to save entry', 'error')
     } finally { setSubmitting(false) }
   }
 
   if (!partyId) return null
 
-  const field = (label: string, icon: React.ReactNode, input: React.ReactNode) => (
+  const field = (label: string, icon: React.ReactNode, input: React.ReactNode, error?: string, loading?: boolean) => (
     <div className="form-field">
-      <label className="form-label">{label}</label>
+      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+        {label}
+        {loading && <Loader2 size={12} className="animate-spin text-muted" />}
+      </label>
       <div className="input-wrap has-icon">
         <span className="input-icon">{icon}</span>
         {input}
       </div>
+      {error && <div style={{ color: 'var(--error)', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 500 }}>{error}</div>}
     </div>
   )
 
@@ -122,7 +155,9 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
             </select>
           )}
           {field('UTR / Ref No.', <Hash size={14} />,
-            <input type="text" placeholder="Transaction ID" value={formData.utr} onChange={e => setFormData(f => ({ ...f, utr: e.target.value }))} />
+            <input type="text" placeholder="Transaction ID" value={formData.utr} onChange={e => setFormData(f => ({ ...f, utr: e.target.value }))} style={{ borderColor: utrError ? 'var(--error)' : undefined }} />,
+            utrError,
+            utrChecking
           )}
           {field('Received (₹)', <IndianRupee size={14} />,
             <input type="number" step="0.01" placeholder="0.00" value={formData.received} onChange={e => setFormData(f => ({ ...f, received: e.target.value }))} />
@@ -158,7 +193,7 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
           </div>
         )}
 
-        <button type="submit" className="btn btn-primary" disabled={submitting} style={{ minWidth: 140 }}>
+        <button type="submit" className="btn btn-primary" disabled={submitting || utrChecking || !!utrError} style={{ minWidth: 140 }}>
           {submitting ? '…' : <><Save size={15} /> {initialData ? 'Update Entry' : 'Add Entry'}</>}
         </button>
       </form>
