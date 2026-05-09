@@ -4,7 +4,7 @@ import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient as createServerClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function createPartyWithAccount(name: string, email?: string, password?: string) {
+export async function createPartyWithAccount(name: string, email?: string, password?: string, commissionRate?: number) {
   const supabase = await createServerClient()
   const { data: { user: adminUser } } = await supabase.auth.getUser()
 
@@ -43,7 +43,8 @@ export async function createPartyWithAccount(name: string, email?: string, passw
     .insert({ 
       name, 
       user_id: adminUser.id, // Linked to the admin who created it
-      linked_auth_id: authUserId // The actual party's auth user ID
+      linked_auth_id: authUserId, // The actual party's auth user ID
+      commission_rate: commissionRate || 0.5
     })
 
   if (partyError) throw partyError

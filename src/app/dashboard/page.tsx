@@ -69,8 +69,8 @@ export default function DashboardPage() {
   }, [fetchData])
 
 
-  const handleAddParty = async (name: string, email?: string, password?: string) => {
-    await createPartyWithAccount(name, email, password)
+  const handleAddParty = async (name: string, email?: string, password?: string, commissionRate?: number) => {
+    await createPartyWithAccount(name, email, password, commissionRate)
     fetchData()
   }
 
@@ -172,7 +172,9 @@ export default function DashboardPage() {
     return { received: acc.received + e.received, paid: acc.paid + e.paid, commission: acc.commission + com, pending: acc.pending + (net - e.paid) }
   }, { received: 0, paid: 0, commission: 0, pending: 0 })
 
-  const selectedPartyName = parties.find(p => p.id === selectedPartyId)?.name || ''
+  const selectedParty = parties.find(p => p.id === selectedPartyId)
+  const selectedPartyName = selectedParty?.name || ''
+  const selectedPartyCommission = (selectedParty as any)?.commission_rate || 0.5
 
   const months = ['All']
   const now = new Date()
@@ -220,7 +222,7 @@ export default function DashboardPage() {
         onAddSource={handleAddSource} 
       />
 
-      <LedgerEntryForm partyId={selectedPartyId} partyName={selectedPartyName} sources={sources} onSubmit={handleEntrySubmit} initialData={editingEntry} onCancel={editingEntry ? () => setEditingEntry(undefined) : undefined} />
+      <LedgerEntryForm partyId={selectedPartyId} partyName={selectedPartyName} defaultCommissionRate={selectedPartyCommission} sources={sources} onSubmit={handleEntrySubmit} initialData={editingEntry} onCancel={editingEntry ? () => setEditingEntry(undefined) : undefined} />
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '5rem', gap: '1rem', color: 'var(--muted)' }}>

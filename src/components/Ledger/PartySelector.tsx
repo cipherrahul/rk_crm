@@ -10,7 +10,7 @@ interface EntityManagerProps {
   parties: Party[]
   selectedPartyId: string | null
   onSelect: (id: string | null) => void
-  onAddParty: (name: string, email?: string, password?: string) => Promise<void>
+  onAddParty: (name: string, email?: string, password?: string, commissionRate?: number) => Promise<void>
   onUpdateParty: (id: string, name: string) => Promise<void>
   onDeleteParty: (id: string) => Promise<void>
   onAddSource: (name: string) => Promise<void>
@@ -23,6 +23,7 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
   const [editName, setEditName] = useState('')
   const [newPartyEmail, setNewPartyEmail] = useState('')
   const [newPartyPassword, setNewPartyPassword] = useState('')
+  const [newPartyCommission, setNewPartyCommission] = useState('0.5')
   const [newSourceName, setNewSourceName] = useState('')
   const [showAddParty, setShowAddParty] = useState(false)
   const [showAddSource, setShowAddSource] = useState(false)
@@ -51,10 +52,11 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
     if (!newPartyName.trim()) return
     setIsAddingParty(true)
     try {
-      await onAddParty(newPartyName.trim(), newPartyEmail.trim() || undefined, newPartyPassword.trim() || undefined)
+      await onAddParty(newPartyName.trim(), newPartyEmail.trim() || undefined, newPartyPassword.trim() || undefined, parseFloat(newPartyCommission) || 0)
       setNewPartyName('')
       setNewPartyEmail('')
       setNewPartyPassword('')
+      setNewPartyCommission('0.5')
       setShowAddParty(false)
       toast(`Party "${newPartyName.trim()}" added`, 'success')
     } catch (err: any) {
@@ -137,6 +139,12 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
               <label className="form-label" style={{ fontSize: '0.75rem' }}>Password (for Party)</label>
               <div className="input-wrap">
                 <input type="password" placeholder="••••••••" value={newPartyPassword} onChange={e => setNewPartyPassword(e.target.value)} />
+              </div>
+            </div>
+            <div className="form-field">
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>Commission %</label>
+              <div className="input-wrap">
+                <input type="number" step="0.01" value={newPartyCommission} onChange={e => setNewPartyCommission(e.target.value)} />
               </div>
             </div>
           </div>

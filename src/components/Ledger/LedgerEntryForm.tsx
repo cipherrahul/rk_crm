@@ -13,6 +13,7 @@ interface EntryData {
 interface EntryFormProps {
   partyId: string | null
   partyName: string
+  defaultCommissionRate?: number
   sources: Source[]
   onSubmit: (entry: EntryData) => Promise<void>
   initialData?: EntryData
@@ -21,7 +22,7 @@ interface EntryFormProps {
 
 function fmt(n: number) { return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
 
-export default function LedgerEntryForm({ partyId, partyName, sources, onSubmit, initialData, onCancel }: EntryFormProps) {
+export default function LedgerEntryForm({ partyId, partyName, defaultCommissionRate = 0.5, sources, onSubmit, initialData, onCancel }: EntryFormProps) {
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -31,8 +32,15 @@ export default function LedgerEntryForm({ partyId, partyName, sources, onSubmit,
     utr: '',
     received: '',
     paid: '',
-    commission_rate: '0.5'
+    commission_rate: defaultCommissionRate.toString()
   })
+
+  // Update commission rate if defaultCommissionRate changes (e.g. when changing party)
+  useEffect(() => {
+    if (!initialData && partyId) {
+      setFormData(f => ({ ...f, commission_rate: defaultCommissionRate.toString() }))
+    }
+  }, [defaultCommissionRate, partyId, initialData])
 
   useEffect(() => {
     if (initialData) {
