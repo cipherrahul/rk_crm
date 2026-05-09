@@ -52,3 +52,25 @@ export async function createPartyWithAccount(name: string, email?: string, passw
   revalidatePath('/dashboard')
   return { success: true }
 }
+
+export async function updatePartyPasswordAsAdmin(partyId: string, newPassword: string) {
+  const supabase = await createServerClient()
+  const { data: { user: adminUser } } = await supabase.auth.getUser()
+  if (!adminUser) throw new Error('Unauthorized')
+
+  const { data: party } = await supabase.from('parties').select('linked_auth_id').eq('id', partyId).single()
+  if (!party || !party.linked_auth_id) throw new Error('Party has no linked account')
+
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.updateUserById(party.linked_auth_id, { password: newPassword })
+  if (error) throw error
+
+  return { success: true }
+}
+
+export async function updateOwnPassword(newPassword: string) {
+  const supabase = await createServerClient()
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw error
+  return { success: true }
+}

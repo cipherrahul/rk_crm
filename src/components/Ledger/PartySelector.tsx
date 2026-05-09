@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Plus, Users, Landmark, X, Check, Edit, Trash2, ChevronDown, Search } from 'lucide-react'
+import { Plus, Users, Landmark, X, Check, Edit, Trash2, ChevronDown, Search, KeyRound } from 'lucide-react'
 import { useToast } from '@/components/Toast'
 
 interface Party { id: string; name: string }
@@ -14,13 +14,16 @@ interface EntityManagerProps {
   onUpdateParty: (id: string, name: string) => Promise<void>
   onDeleteParty: (id: string) => Promise<void>
   onAddSource: (name: string) => Promise<void>
+  onUpdatePassword?: (partyId: string, newPassword: string) => Promise<any>
 }
 
-export default function EntityManager({ parties, selectedPartyId, onSelect, onAddParty, onUpdateParty, onDeleteParty, onAddSource }: EntityManagerProps) {
+export default function EntityManager({ parties, selectedPartyId, onSelect, onAddParty, onUpdateParty, onDeleteParty, onAddSource, onUpdatePassword }: EntityManagerProps) {
   const { toast } = useToast()
   const [newPartyName, setNewPartyName] = useState('')
   const [editingPartyId, setEditingPartyId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [passwordChangePartyId, setPasswordChangePartyId] = useState<string | null>(null)
+  const [adminNewPassword, setAdminNewPassword] = useState('')
   const [newPartyEmail, setNewPartyEmail] = useState('')
   const [newPartyPassword, setNewPartyPassword] = useState('')
   const [newPartyCommission, setNewPartyCommission] = useState('0.5')
@@ -72,6 +75,18 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
       toast('Party updated', 'success')
     } catch {
       toast('Failed to update party', 'error')
+    }
+  }
+
+  const handleUpdatePassword = async () => {
+    if (!passwordChangePartyId || !adminNewPassword.trim() || !onUpdatePassword) return
+    try {
+      await onUpdatePassword(passwordChangePartyId, adminNewPassword.trim())
+      setPasswordChangePartyId(null)
+      setAdminNewPassword('')
+      toast('Password updated', 'success')
+    } catch {
+      toast('Failed to update password', 'error')
     }
   }
 
@@ -259,7 +274,21 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
 
               {parties.filter(p => p.name.toLowerCase().includes(partySearch.toLowerCase())).map(p => (
                 <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem' }}>
-                  {editingPartyId === p.id ? (
+                  {passwordChangePartyId === p.id ? (
+                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '0.5rem', background: 'var(--surface-2)', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--warning)' }}>
+                      <input 
+                        type="text"
+                        autoFocus
+                        placeholder="New Password"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '0.85rem', flex: 1, outline: 'none' }}
+                        value={adminNewPassword}
+                        onChange={e => setAdminNewPassword(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleUpdatePassword(); if (e.key === 'Escape') setPasswordChangePartyId(null) }}
+                      />
+                      <button className="btn btn-ghost btn-icon btn-sm" onClick={handleUpdatePassword} style={{ color: 'var(--success)' }}><Check size={14} /></button>
+                      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setPasswordChangePartyId(null)}><X size={14} /></button>
+                    </div>
+                  ) : editingPartyId === p.id ? (
                     <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '0.5rem', background: 'var(--surface-2)', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--primary)' }}>
                       <input 
                         autoFocus
@@ -290,6 +319,7 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
                         {p.name}
                       </button>
                       <div style={{ display: 'flex', gap: '0.25rem', paddingRight: '0.5rem' }}>
+                        {onUpdatePassword && <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setPasswordChangePartyId(p.id); setAdminNewPassword('') }} title="Change Password"><KeyRound size={13} /></button>}
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setEditingPartyId(p.id); setEditName(p.name) }} title="Edit"><Edit size={13} /></button>
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteParty(p.id, p.name) }} style={{ color: 'var(--error)' }} title="Delete"><Trash2 size={13} /></button>
                       </div>

@@ -5,9 +5,10 @@ import { createClient } from '@/utils/supabase/client'
 import SummaryCards from '@/components/Ledger/SummaryCards'
 import LedgerTable from '@/components/Ledger/LedgerTable'
 import { useToast } from '@/components/Toast'
-import { Loader2, ShieldAlert } from 'lucide-react'
+import { Loader2, ShieldAlert, KeyRound, Check, X } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
+import { updateOwnPassword } from '@/app/actions/party'
 
 interface Entry {
   id: string; date: string; mode: string; source: string; utr: string
@@ -22,6 +23,9 @@ export default function PartyDashboardPage() {
   const [partyName, setPartyName] = useState('')
   const [loading, setLoading] = useState(true)
   const [unauthorized, setUnauthorized] = useState(false)
+  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const supabase = createClient()
 
   const fetchData = useCallback(async () => {
@@ -133,11 +137,49 @@ export default function PartyDashboardPage() {
     }
   }
 
+  const handlePasswordChange = async () => {
+    if (!newPassword.trim()) return
+    setIsChangingPassword(true)
+    try {
+      await updateOwnPassword(newPassword.trim())
+      setNewPassword('')
+      setShowPasswordChange(false)
+      toast('Password updated successfully', 'success')
+    } catch {
+      toast('Failed to update password', 'error')
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
   return (
     <div className="animate-in">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Welcome, {partyName}</h1>
-        <p className="text-muted">Here are your transaction records and current balance.</p>
+      <div className="flex-between mb-4">
+        <div>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Welcome, {partyName}</h1>
+          <p className="text-muted">Here are your transaction records and current balance.</p>
+        </div>
+        <div>
+          {showPasswordChange ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--surface-2)', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--warning)' }}>
+              <input 
+                type="password"
+                autoFocus
+                placeholder="Enter new password"
+                style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '0.85rem', outline: 'none', width: '150px' }}
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handlePasswordChange(); if (e.key === 'Escape') setShowPasswordChange(false) }}
+              />
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={handlePasswordChange} disabled={isChangingPassword} style={{ color: 'var(--success)' }}><Check size={14} /></button>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setShowPasswordChange(false)}><X size={14} /></button>
+            </div>
+          ) : (
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowPasswordChange(true)}>
+              <KeyRound size={14} /> Change Password
+            </button>
+          )}
+        </div>
       </div>
 
       <SummaryCards 

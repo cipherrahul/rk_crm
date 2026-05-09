@@ -11,7 +11,7 @@ import { Loader2, Calendar } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import { useRouter } from 'next/navigation'
-import { createPartyWithAccount } from '@/app/actions/party'
+import { createPartyWithAccount, updatePartyPasswordAsAdmin } from '@/app/actions/party'
 
 interface Party { id: string; name: string }
 interface Source { id: string; name: string }
@@ -220,6 +220,7 @@ export default function DashboardPage() {
         onUpdateParty={handleUpdateParty}
         onDeleteParty={handleDeleteParty}
         onAddSource={handleAddSource} 
+        onUpdatePassword={updatePartyPasswordAsAdmin}
       />
 
       <LedgerEntryForm partyId={selectedPartyId} partyName={selectedPartyName} defaultCommissionRate={selectedPartyCommission} sources={sources} onSubmit={handleEntrySubmit} initialData={editingEntry} onCancel={editingEntry ? () => setEditingEntry(undefined) : undefined} />
