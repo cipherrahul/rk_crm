@@ -63,8 +63,8 @@ export default function PartyDashboardPage() {
       .from('ledger_entries')
       .select('*, parties(name)')
       .eq('party_id', party.id)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
+      .order('date', { ascending: true })
+      .order('created_at', { ascending: true })
 
     if (startDate) query = query.gte('date', startDate)
     if (endDate) query = query.lte('date', endDate)
