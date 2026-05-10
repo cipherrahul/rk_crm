@@ -8,7 +8,7 @@ import { createClient } from '@/utils/supabase/client'
 interface Source { id: string; name: string }
 interface EntryData {
   id?: string; date: string; mode: string; source: string; utr: string; remark?: string
-  received: number; paid: number; commission_rate: number; party_id?: string
+  received: number; paid: number; commission_rate: number; extra_charge?: number; party_id?: string
 }
 
 interface EntryFormProps {
@@ -37,6 +37,7 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
     remark: '',
     received: '',
     paid: '',
+    extra_charge: '',
     commission_rate: defaultCommissionRate.toString()
   })
 
@@ -56,6 +57,7 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
           remark: initialData.remark || '',
           received: initialData.received.toString(),
           paid: initialData.paid.toString(),
+          extra_charge: (initialData as any).extra_charge?.toString() || '',
           commission_rate: initialData.commission_rate.toString()
         })
       }, 0)
@@ -90,9 +92,10 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
 
   const received = parseFloat(formData.received) || 0
   const paid = parseFloat(formData.paid) || 0
+  const extraCharge = parseFloat(formData.extra_charge) || 0
   const commRate = parseFloat(formData.commission_rate) || 0
   const commission = (received * commRate) / 100
-  const net = received - commission
+  const net = received - commission - extraCharge
   const pending = net - paid
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,8 +103,8 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
     if (!partyId) { toast('Please select a party first', 'error'); return }
     setSubmitting(true)
     try {
-      await onSubmit({ ...formData, party_id: partyId, received, paid, commission_rate: commRate })
-      if (!initialData) setFormData(f => ({ ...f, utr: '', remark: '', received: '', paid: '' }))
+      await onSubmit({ ...formData, party_id: partyId, received, paid, commission_rate: commRate, extra_charge: extraCharge })
+      if (!initialData) setFormData(f => ({ ...f, utr: '', remark: '', received: '', paid: '', extra_charge: '' }))
       toast(initialData ? 'Entry updated' : 'Entry added successfully', 'success')
     } catch (err: any) {
       toast(err.message || 'Failed to save entry', 'error')
@@ -182,6 +185,9 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
           {field('Paid (₹)', <IndianRupee size={14} />,
             <input type="number" step="0.01" placeholder="0.00" value={formData.paid} onChange={e => setFormData(f => ({ ...f, paid: e.target.value }))} />
           )}
+          {field('Extra Charge (₹)', <IndianRupee size={14} />,
+            <input type="number" step="0.01" placeholder="0.00" value={formData.extra_charge} onChange={e => setFormData(f => ({ ...f, extra_charge: e.target.value }))} />
+          )}
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
@@ -201,6 +207,7 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
               {[
                 { label: 'Received', value: fmt(received), color: 'var(--success)' },
                 { label: `Commission (${commRate}%)`, value: fmt(commission), color: 'var(--primary)' },
+                { label: 'Extra Charge', value: fmt(extraCharge), color: 'var(--error)' },
                 { label: 'Net Amount', value: fmt(net), color: 'var(--foreground)' },
                 { label: 'Pending', value: fmt(pending), color: pending > 0 ? 'var(--warning)' : 'var(--success)' }
               ].map(item => (

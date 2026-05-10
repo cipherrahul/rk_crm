@@ -5,7 +5,7 @@ import { Edit, Trash2, FileSpreadsheet, Printer, FileText, Image as ImageIcon, D
 
 interface Entry {
   id: string; date: string; mode: string; source: string; utr: string; remark?: string
-  received: number; paid: number; commission_rate: number; party_id: string
+  received: number; paid: number; commission_rate: number; extra_charge?: number; party_id: string
   party_name?: string
   parties?: { name: string }
 }
@@ -76,7 +76,7 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
       const party = e.party_name || 'Unknown'
       if (!summary[party]) summary[party] = { received: 0, paid: 0, pending: 0 }
       const com = (e.received * e.commission_rate) / 100
-      const net = e.received - com
+      const net = e.received - com - (e.extra_charge || 0)
       summary[party].received += e.received
       summary[party].paid += e.paid
       summary[party].pending += (net - e.paid)
@@ -155,7 +155,7 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
   let currentBalance = 0
   for (const e of chronological) {
     const com = (e.received * e.commission_rate) / 100
-    const net = e.received - com
+    const net = e.received - com - (e.extra_charge || 0)
     currentBalance += (net - e.paid)
     ;(e as any).runningPending = currentBalance
   }
@@ -195,6 +195,7 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
                 <th>Received</th>
                 <th>Date</th>
                 <th>Mode / Source</th>
+                <th>Extra</th>
                 <th>UTR / Ref</th>
                 <th>Remark</th>
                 <th>Commission</th>
@@ -207,7 +208,7 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
             <tbody>
               {filtered.map(e => {
                 const com = (e.received * e.commission_rate) / 100
-                const net = e.received - com
+                const net = e.received - com - (e.extra_charge || 0)
                 const pending = (e as any).runningPending
                 return (
                   <tr key={e.id}>
@@ -217,6 +218,7 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
                       <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{e.mode}</div>
                       <div className="text-xs text-muted">{e.source}</div>
                     </td>
+                    <td style={{ color: 'var(--error)', fontSize: '0.85rem' }}>{e.extra_charge ? fmt(e.extra_charge) : '—'}</td>
                     <td className="mono text-sm" style={{ color: 'var(--muted)' }}>{e.utr || '—'}</td>
                     <td className="text-xs" style={{ color: 'var(--muted)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.remark}>
                       {e.remark || '—'}

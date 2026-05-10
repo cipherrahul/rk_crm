@@ -18,7 +18,7 @@ interface Party { id: string; name: string }
 interface Source { id: string; name: string }
 interface Entry {
   id: string; date: string; mode: string; source: string; utr: string; remark?: string
-  received: number; paid: number; commission_rate: number; party_id: string
+  received: number; paid: number; commission_rate: number; extra_charge?: number; party_id: string
   party_name?: string
   parties?: { name: string }
 }
@@ -123,8 +123,8 @@ export default function LedgerWorkPage() {
     if (type === 'print') { window.print(); return }
     const exportData = entries
     if (type === 'csv') {
-      let csv = 'Date,Party,Mode,Source,UTR,Remark,Received,Paid\n'
-      exportData.forEach(e => { csv += `${e.date},${e.party_name},${e.mode},${e.source},${e.utr},${e.remark || ''},${e.received},${e.paid}\n` })
+      let csv = 'Date,Party,Mode,Source,UTR,Remark,Received,ExtraCharge,Paid\n'
+      exportData.forEach(e => { csv += `${e.date},${e.party_name},${e.mode},${e.source},${e.utr},${e.remark || ''},${e.received},${(e as any).extra_charge || 0},${e.paid}\n` })
       const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `ledger.csv`, style: 'display:none' })
       document.body.appendChild(a); a.click(); document.body.removeChild(a)
       return
