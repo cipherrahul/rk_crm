@@ -63,9 +63,14 @@ export default function Home() {
           <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Sign in to your Ledger Pro account</p>
         </div>
         <AuthForm />
-        <p style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--muted)' }}>
-          © {new Date().getFullYear()} Ledger Pro. All rights reserved.
-        </p>
+        <div style={{ marginTop: '3rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--muted)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+          <p>© RK Institution 2026. All rights reserved.</p>
+          <p style={{ fontWeight: 600 }}>Developed by RK Institution</p>
+          <p>For more software related query contact us on WhatsApp:</p>
+          <a href="https://wa.me/919818490248" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none' }}>
+            +91 98184 90248
+          </a>
+        </div>
       </div>
     </main>
   )

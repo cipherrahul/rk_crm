@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import EntityManager from '@/components/Ledger/PartySelector'
 import { useToast } from '@/components/Toast'
 import { Loader2, Users } from 'lucide-react'
-import { createPartyWithAccount, updatePartyPasswordAsAdmin } from '@/app/actions/party'
+import { createPartyWithAccount, updatePartyPasswordAsAdmin, togglePartyBlock } from '@/app/actions/party'
 import { useRouter } from 'next/navigation'
 
 export default function PartiesPage() {
@@ -86,6 +86,10 @@ export default function PartiesPage() {
           onDeleteParty={handleDeleteParty}
           onAddSource={handleAddSource} 
           onUpdatePassword={updatePartyPasswordAsAdmin}
+          onToggleBlock={async (id, blocked) => {
+            await togglePartyBlock(id, blocked)
+            fetchData()
+          }}
         />
       )}
     </div>

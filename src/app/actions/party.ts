@@ -74,3 +74,22 @@ export async function updateOwnPassword(newPassword: string) {
   if (error) throw error
   return { success: true }
 }
+
+export async function togglePartyBlock(partyId: string, blocked: boolean) {
+  const supabase = await createServerClient()
+  const { data: { user: adminUser } } = await supabase.auth.getUser()
+  if (!adminUser) throw new Error('Unauthorized')
+
+  const { error } = await supabase
+    .from('parties')
+    .update({ is_blocked: blocked })
+    .eq('id', partyId)
+
+  if (error) throw error
+  
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/parties')
+  revalidatePath('/dashboard/ledger')
+  
+  return { success: true }
+}

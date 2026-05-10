@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Plus, Users, Landmark, X, Check, Edit, Trash2, ChevronDown, Search, KeyRound } from 'lucide-react'
+import { Plus, Users, Landmark, X, Check, Edit, Trash2, ChevronDown, Search, KeyRound, Lock, Unlock } from 'lucide-react'
 import { useToast } from '@/components/Toast'
 
-interface Party { id: string; name: string }
+interface Party { id: string; name: string; is_blocked?: boolean }
 
 interface EntityManagerProps {
   parties: Party[]
@@ -15,10 +15,11 @@ interface EntityManagerProps {
   onDeleteParty: (id: string) => Promise<void>
   onAddSource: (name: string) => Promise<void>
   onUpdatePassword?: (partyId: string, newPassword: string) => Promise<any>
+  onToggleBlock?: (partyId: string, blocked: boolean) => Promise<void>
   hideManagement?: boolean
 }
 
-export default function EntityManager({ parties, selectedPartyId, onSelect, onAddParty, onUpdateParty, onDeleteParty, onAddSource, onUpdatePassword, hideManagement = false }: EntityManagerProps) {
+export default function EntityManager({ parties, selectedPartyId, onSelect, onAddParty, onUpdateParty, onDeleteParty, onAddSource, onUpdatePassword, onToggleBlock, hideManagement = false }: EntityManagerProps) {
   const { toast } = useToast()
   const [newPartyName, setNewPartyName] = useState('')
   const [editingPartyId, setEditingPartyId] = useState<string | null>(null)
@@ -113,6 +114,16 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
     } catch {
       toast('Failed to add source', 'error')
     } finally { setIsAddingSource(false) }
+  }
+
+  const handleToggleBlock = async (id: string, currentlyBlocked: boolean) => {
+    if (!onToggleBlock) return
+    try {
+      await onToggleBlock(id, !currentlyBlocked)
+      toast(currentlyBlocked ? 'Party unblocked' : 'Party blocked', 'success')
+    } catch {
+      toast('Failed to update block status', 'error')
+    }
   }
 
   return (
@@ -214,7 +225,12 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Users size={16} style={{ color: 'var(--primary)' }} />
               <span style={{ fontWeight: 600 }}>
-                {selectedPartyId ? parties.find(p => p.id === selectedPartyId)?.name : 'All Parties'}
+                {selectedPartyId ? (
+                  <>
+                    {parties.find(p => p.id === selectedPartyId)?.name}
+                    {parties.find(p => p.id === selectedPartyId)?.is_blocked && <span style={{ color: 'var(--error)', fontSize: '0.75rem', marginLeft: '0.4rem' }}>(Blocked)</span>}
+                  </>
+                ) : 'All Parties'}
               </span>
             </div>
             <ChevronDown size={16} style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -320,9 +336,20 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
                         onClick={() => { onSelect(p.id); setDropdownOpen(false) }}
                       >
                         {p.name}
+                        {p.is_blocked && <span style={{ color: 'var(--error)', fontSize: '0.7rem', marginLeft: '0.5rem', fontWeight: 600 }}>(Blocked)</span>}
                       </button>
                       {!hideManagement && (
                         <div style={{ display: 'flex', gap: '0.25rem', paddingRight: '0.5rem' }}>
+                          {onToggleBlock && (
+                            <button 
+                              className="btn btn-ghost btn-icon btn-sm" 
+                              onClick={(e) => { e.stopPropagation(); handleToggleBlock(p.id, !!p.is_blocked) }} 
+                              title={p.is_blocked ? 'Unblock Party' : 'Block Party'}
+                              style={{ color: p.is_blocked ? 'var(--error)' : 'var(--success)' }}
+                            >
+                              {p.is_blocked ? <Lock size={13} /> : <Unlock size={13} />}
+                            </button>
+                          )}
                           {onUpdatePassword && <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setPasswordChangePartyId(p.id); setAdminNewPassword('') }} title="Change Password"><KeyRound size={13} /></button>}
                           <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setEditingPartyId(p.id); setEditName(p.name) }} title="Edit"><Edit size={13} /></button>
                           <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteParty(p.id, p.name) }} style={{ color: 'var(--error)' }} title="Delete"><Trash2 size={13} /></button>

@@ -24,6 +24,7 @@ export default function PartyDashboardPage() {
   const [partyName, setPartyName] = useState('')
   const [loading, setLoading] = useState(true)
   const [unauthorized, setUnauthorized] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -39,12 +40,18 @@ export default function PartyDashboardPage() {
     // 1. Find the party record linked to this auth user
     const { data: party, error: partyError } = await supabase
       .from('parties')
-      .select('id, name')
+      .select('id, name, is_blocked')
       .eq('linked_auth_id', user.id)
       .single()
 
     if (partyError || !party) {
       setUnauthorized(true)
+      setLoading(false)
+      return
+    }
+
+    if (party.is_blocked) {
+      setIsBlocked(true)
       setLoading(false)
       return
     }
@@ -85,6 +92,22 @@ export default function PartyDashboardPage() {
       <p style={{ color: 'var(--muted)', maxWidth: 400, margin: '0.5rem auto' }}>
         This account is not yet linked to a party record. Please contact the administrator.
       </p>
+    </div>
+  )
+
+  if (isBlocked) return (
+    <div className="card" style={{ textAlign: 'center', padding: '5rem', border: '2px solid var(--error)' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'var(--error)' }}>
+        <ShieldAlert size={32} />
+      </div>
+      <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--error)', marginBottom: '0.75rem' }}>Account Restricted</h2>
+      <p style={{ color: 'var(--muted)', maxWidth: 450, margin: '0 auto', lineHeight: 1.6, fontSize: '1rem' }}>
+        Your account access has been restricted by the administrator. 
+        You cannot view your ledger or perform any actions at this time.
+      </p>
+      <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+        <p className="text-sm text-muted">For support, contact the administrator or reach out via WhatsApp.</p>
+      </div>
     </div>
   )
 
