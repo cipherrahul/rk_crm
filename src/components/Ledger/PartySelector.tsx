@@ -15,9 +15,10 @@ interface EntityManagerProps {
   onDeleteParty: (id: string) => Promise<void>
   onAddSource: (name: string) => Promise<void>
   onUpdatePassword?: (partyId: string, newPassword: string) => Promise<any>
+  hideManagement?: boolean
 }
 
-export default function EntityManager({ parties, selectedPartyId, onSelect, onAddParty, onUpdateParty, onDeleteParty, onAddSource, onUpdatePassword }: EntityManagerProps) {
+export default function EntityManager({ parties, selectedPartyId, onSelect, onAddParty, onUpdateParty, onDeleteParty, onAddSource, onUpdatePassword, hideManagement = false }: EntityManagerProps) {
   const { toast } = useToast()
   const [newPartyName, setNewPartyName] = useState('')
   const [editingPartyId, setEditingPartyId] = useState<string | null>(null)
@@ -123,14 +124,16 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
           <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Parties</span>
           <span className="badge badge-neutral">{parties.length}</span>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setShowAddSource(s => !s); setShowAddParty(false) }}>
-            <Landmark size={14} /> Add Source
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={() => { setShowAddParty(s => !s); setShowAddSource(false) }}>
-            <Plus size={14} /> Add Party
-          </button>
-        </div>
+        {!hideManagement && (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => { setShowAddSource(s => !s); setShowAddParty(false) }}>
+              <Landmark size={14} /> Add Source
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={() => { setShowAddParty(s => !s); setShowAddSource(false) }}>
+              <Plus size={14} /> Add Party
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Inline Add Party */}
@@ -318,11 +321,13 @@ export default function EntityManager({ parties, selectedPartyId, onSelect, onAd
                       >
                         {p.name}
                       </button>
-                      <div style={{ display: 'flex', gap: '0.25rem', paddingRight: '0.5rem' }}>
-                        {onUpdatePassword && <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setPasswordChangePartyId(p.id); setAdminNewPassword('') }} title="Change Password"><KeyRound size={13} /></button>}
-                        <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setEditingPartyId(p.id); setEditName(p.name) }} title="Edit"><Edit size={13} /></button>
-                        <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteParty(p.id, p.name) }} style={{ color: 'var(--error)' }} title="Delete"><Trash2 size={13} /></button>
-                      </div>
+                      {!hideManagement && (
+                        <div style={{ display: 'flex', gap: '0.25rem', paddingRight: '0.5rem' }}>
+                          {onUpdatePassword && <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setPasswordChangePartyId(p.id); setAdminNewPassword('') }} title="Change Password"><KeyRound size={13} /></button>}
+                          <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); setEditingPartyId(p.id); setEditName(p.name) }} title="Edit"><Edit size={13} /></button>
+                          <button className="btn btn-ghost btn-icon btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteParty(p.id, p.name) }} style={{ color: 'var(--error)' }} title="Delete"><Trash2 size={13} /></button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

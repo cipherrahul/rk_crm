@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LayoutDashboard, Settings, LogOut, Wallet, ChevronLeft, ChevronRight, Moon, Sun } from 'lucide-react'
+import { LayoutDashboard, Settings, LogOut, Wallet, ChevronLeft, ChevronRight, Moon, Sun, Users } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -64,6 +64,8 @@ export default function Sidebar({ userEmail, role = 'admin' }: { userEmail?: str
   const navItems = role === 'admin' 
     ? [
         { href: '/dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+        { href: '/dashboard/ledger', icon: <Wallet size={18} />, label: 'Ledger' },
+        { href: '/dashboard/parties', icon: <Users size={18} />, label: 'Parties' },
         { href: '/dashboard/settings', icon: <Settings size={18} />, label: 'Settings' },
       ]
     : [

@@ -106,7 +106,19 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
     } finally { setSubmitting(false) }
   }
 
-  if (!partyId) return null
+  if (!partyId) return (
+    <div className="card animate-in-delay-2 mb-3" style={{ border: '2px dashed var(--border)', background: 'var(--surface-2)', padding: '2.5rem', textAlign: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', marginBottom: '0.5rem' }}>
+          <Calculator size={24} />
+        </div>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>No Party Selected</h3>
+        <p className="text-muted text-sm" style={{ maxWidth: '300px' }}>
+          Please select a party from the dropdown above to add a new transaction record to their ledger.
+        </p>
+      </div>
+    </div>
+  )
 
   const field = (label: string, icon: React.ReactNode, input: React.ReactNode, error?: string, loading?: boolean) => (
     <div className="form-field">

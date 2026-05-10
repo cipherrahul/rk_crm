@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import SummaryCards from '@/components/Ledger/SummaryCards'
 import LedgerTable from '@/components/Ledger/LedgerTable'
+import DateRangeFilter from '@/components/Ledger/DateRangeFilter'
 import { useToast } from '@/components/Toast'
 import { Loader2, ShieldAlert, KeyRound, Check, X } from 'lucide-react'
 import html2canvas from 'html2canvas'
@@ -25,6 +26,8 @@ export default function PartyDashboardPage() {
   const [unauthorized, setUnauthorized] = useState(false)
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [newPassword, setNewPassword] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const supabase = createClient()
 
@@ -49,15 +52,20 @@ export default function PartyDashboardPage() {
     setPartyName(party.name)
 
     // 2. Fetch entries for this party
-    const { data: entryData } = await supabase
+    let query = supabase
       .from('ledger_entries')
       .select('*, parties(name)')
       .eq('party_id', party.id)
       .order('date', { ascending: false })
 
+    if (startDate) query = query.gte('date', startDate)
+    if (endDate) query = query.lte('date', endDate)
+
+    const { data: entryData } = await query
+
     setEntries(entryData?.map(e => ({ ...e, party_name: e.parties?.name })) || [])
     setLoading(false)
-  }, [supabase])
+  }, [supabase, startDate, endDate])
 
   useEffect(() => {
     fetchData()
@@ -179,6 +187,9 @@ export default function PartyDashboardPage() {
               <KeyRound size={14} /> Change Password
             </button>
           )}
+          <a href="https://wa.me/91870045559" target="_blank" rel="noreferrer" className="btn btn-primary btn-sm" style={{ marginLeft: '0.5rem', background: '#25D366', color: '#fff', borderColor: '#25D366' }}>
+            Quick Support (WhatsApp)
+          </a>
         </div>
       </div>
 
@@ -187,6 +198,14 @@ export default function PartyDashboardPage() {
         totalPaid={totals.paid} 
         totalCommission={totals.commission} 
         totalPending={totals.pending} 
+      />
+
+      <DateRangeFilter 
+        startDate={startDate} 
+        endDate={endDate} 
+        onStartChange={setStartDate} 
+        onEndChange={setEndDate} 
+        onDownload={() => handleExport('pdf')} 
       />
 
       <LedgerTable 

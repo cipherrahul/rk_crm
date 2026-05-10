@@ -6,6 +6,7 @@ import SummaryCards from '@/components/Ledger/SummaryCards'
 import EntityManager from '@/components/Ledger/PartySelector'
 import LedgerEntryForm from '@/components/Ledger/LedgerEntryForm'
 import LedgerTable from '@/components/Ledger/LedgerTable'
+import DateRangeFilter from '@/components/Ledger/DateRangeFilter'
 import { useToast } from '@/components/Toast'
 import { Loader2, Calendar, Search, X } from 'lucide-react'
 import html2canvas from 'html2canvas'
@@ -32,6 +33,8 @@ export default function DashboardPage() {
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<Entry | undefined>(undefined)
   const [selectedMonth, setSelectedMonth] = useState('All')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(true)
   const [masterSearch, setMasterSearch] = useState('')
   const [masterResults, setMasterResults] = useState<Entry[]>([])
@@ -56,15 +59,18 @@ export default function DashboardPage() {
     
     if (selectedMonth !== 'All') {
       const [year, month] = selectedMonth.split('-')
-      const startDate = `${year}-${month}-01`
-      const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0]
-      query = query.gte('date', startDate).lte('date', endDate)
+      const monthStart = `${year}-${month}-01`
+      const endDateVal = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0]
+      query = query.gte('date', monthStart).lte('date', endDateVal)
     }
+
+    if (startDate) query = query.gte('date', startDate)
+    if (endDate) query = query.lte('date', endDate)
 
     const { data: entryData } = await query
     setEntries(entryData?.map(e => ({ ...e, party_name: e.parties?.name })) || [])
     setLoading(false)
-  }, [supabase, selectedPartyId, selectedMonth, router])
+  }, [supabase, selectedPartyId, selectedMonth, startDate, endDate, router])
 
   useEffect(() => {
     const timeout = setTimeout(() => { fetchData() }, 0)
@@ -264,52 +270,56 @@ export default function DashboardPage() {
         <>
           <SummaryCards totalReceived={totals.received} totalPaid={totals.paid} totalCommission={totals.commission} totalPending={totals.pending} />
 
-      {/* Month Filter */}
-      <div className="card mb-3" style={{ padding: '0.75rem 1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--muted)', flexShrink: 0, paddingRight: '0.5rem', borderRight: '1px solid var(--border)' }}>
-            <Calendar size={15} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Filter by Month</span>
+          <DateRangeFilter 
+            startDate={startDate} 
+            endDate={endDate} 
+            onStartChange={setStartDate} 
+            onEndChange={setEndDate} 
+            onDownload={() => handleExport('pdf')} 
+          />
+
+          {/* Month Filter */}
+          <div className="card mb-3" style={{ padding: '0.75rem 1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--muted)', flexShrink: 0, paddingRight: '0.5rem', borderRight: '1px solid var(--border)' }}>
+                <Calendar size={15} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Filter by Month</span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {months.map(m => {
+                  const label = m === 'All' ? 'All Time' : new Date(m + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                  return (
+                    <button 
+                      key={m} 
+                      className={`party-chip ${selectedMonth === m ? 'selected' : ''}`} 
+                      onClick={() => setSelectedMonth(m)}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {months.map(m => {
-              const label = m === 'All' ? 'All Time' : new Date(m + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-              return (
-                <button 
-                  key={m} 
-                  className={`party-chip ${selectedMonth === m ? 'selected' : ''}`} 
-                  onClick={() => setSelectedMonth(m)}
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
 
-      <EntityManager 
-        parties={parties} 
-        selectedPartyId={selectedPartyId} 
-        onSelect={setSelectedPartyId} 
-        onAddParty={handleAddParty} 
-        onUpdateParty={handleUpdateParty}
-        onDeleteParty={handleDeleteParty}
-        onAddSource={handleAddSource} 
-        onUpdatePassword={updatePartyPasswordAsAdmin}
-      />
-
-      <LedgerEntryForm partyId={selectedPartyId} partyName={selectedPartyName} defaultCommissionRate={selectedPartyCommission} sources={sources} onSubmit={handleEntrySubmit} initialData={editingEntry} onCancel={editingEntry ? () => setEditingEntry(undefined) : undefined} />
-
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '5rem', gap: '1rem', color: 'var(--muted)' }}>
-          <Loader2 size={28} className="animate-spin" style={{ color: 'var(--primary)' }} />
-          <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Loading entries…</span>
-        </div>
-      ) : (
-        <LedgerTable entries={entries} parties={parties} isAllParties={!selectedPartyId} businessName={businessName} onEdit={(e) => setEditingEntry(e)} onDelete={handleDeleteEntry} onExport={handleExport} />
-      )}
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '5rem', gap: '1rem', color: 'var(--muted)' }}>
+              <Loader2 size={28} className="animate-spin" style={{ color: 'var(--primary)' }} />
+              <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Loading entries…</span>
+            </div>
+          ) : (
+            <LedgerTable 
+              entries={entries} 
+              parties={parties} 
+              isAllParties={!selectedPartyId} 
+              businessName={businessName} 
+              readOnly={true} 
+              onEdit={() => {}} 
+              onDelete={async () => {}} 
+              onExport={handleExport} 
+            />
+          )}
         </>
       )}
     </div>
