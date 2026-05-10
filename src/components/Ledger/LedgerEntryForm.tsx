@@ -166,19 +166,19 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
               <option>Other</option>
             </select>
           )}
+          {field('Received (₹)', <IndianRupee size={14} />,
+            <input type="number" step="0.01" placeholder="0.00" value={formData.received} onChange={e => setFormData(f => ({ ...f, received: e.target.value }))} />
+          )}
           {field('UTR / Ref No.', <Hash size={14} />,
             <input type="text" placeholder="Transaction ID" value={formData.utr} onChange={e => setFormData(f => ({ ...f, utr: e.target.value }))} style={{ borderColor: utrError ? 'var(--error)' : undefined }} />,
             utrError,
             utrChecking
           )}
-          {field('Received (₹)', <IndianRupee size={14} />,
-            <input type="number" step="0.01" placeholder="0.00" value={formData.received} onChange={e => setFormData(f => ({ ...f, received: e.target.value }))} />
+          {field('Commission %', <Percent size={14} />,
+            <input type="number" step="0.01" value={formData.commission_rate} onChange={e => setFormData(f => ({ ...f, commission_rate: e.target.value }))} />
           )}
           {field('Paid (₹)', <IndianRupee size={14} />,
             <input type="number" step="0.01" placeholder="0.00" value={formData.paid} onChange={e => setFormData(f => ({ ...f, paid: e.target.value }))} />
-          )}
-          {field('Commission %', <Percent size={14} />,
-            <input type="number" step="0.01" value={formData.commission_rate} onChange={e => setFormData(f => ({ ...f, commission_rate: e.target.value }))} />
           )}
         </div>
 
