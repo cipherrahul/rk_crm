@@ -64,6 +64,7 @@ export default function PartyDashboardPage() {
       .select('*, parties(name)')
       .eq('party_id', party.id)
       .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (startDate) query = query.gte('date', startDate)
     if (endDate) query = query.lte('date', endDate)

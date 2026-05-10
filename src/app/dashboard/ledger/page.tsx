@@ -50,7 +50,7 @@ export default function LedgerWorkPage() {
     const { data: sourceData } = await supabase.from('sources').select('*').order('name')
     setSources(sourceData || [])
     
-    let query = supabase.from('ledger_entries').select('*, parties(name)').order('date', { ascending: false })
+    let query = supabase.from('ledger_entries').select('*, parties(name)').order('date', { ascending: false }).order('created_at', { ascending: false })
     if (selectedPartyId) query = query.eq('party_id', selectedPartyId)
     if (startDate) query = query.gte('date', startDate)
     if (endDate) query = query.lte('date', endDate)
