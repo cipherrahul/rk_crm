@@ -5,19 +5,19 @@ import { createClient } from '@/utils/supabase/client'
 import { LogIn, UserPlus, Loader2, KeyRound, Mail } from 'lucide-react'
 import { useToast } from '@/components/Toast'
 
-export default function AuthForm() {
+export default function AuthForm({ allowSignUp = false, initialIsSignUp = false }: { allowSignUp?: boolean, initialIsSignUp?: boolean }) {
   const { toast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [isSignUp, setIsSignUp] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(initialIsSignUp)
   const supabase = createClient()
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
-      if (isSignUp) {
+      if (isSignUp && allowSignUp) {
         const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
         if (error) throw error
         toast('Check your email for the confirmation link!', 'success')
@@ -54,9 +54,11 @@ export default function AuthForm() {
         {loading ? <Loader2 size={18} className="animate-spin" /> : isSignUp ? <><UserPlus size={17} /> Create Account</> : <><LogIn size={17} /> Sign In</>}
       </button>
 
-      <button type="button" className="btn btn-ghost w-full" onClick={() => setIsSignUp(s => !s)}>
-        {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-      </button>
+      {allowSignUp && (
+        <button type="button" className="btn btn-ghost w-full" onClick={() => setIsSignUp(s => !s)}>
+          {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+        </button>
+      )}
     </form>
   )
 }

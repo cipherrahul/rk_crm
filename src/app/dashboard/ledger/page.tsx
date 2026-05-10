@@ -171,6 +171,9 @@ export default function LedgerWorkPage() {
         onStartChange={setStartDate} 
         onEndChange={setEndDate} 
         onDownload={() => handleExport('pdf')} 
+        parties={parties}
+        selectedPartyId={selectedPartyId}
+        onPartyChange={setSelectedPartyId}
       />
 
       <EntityManager 

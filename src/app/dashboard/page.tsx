@@ -276,6 +276,9 @@ export default function DashboardPage() {
             onStartChange={setStartDate} 
             onEndChange={setEndDate} 
             onDownload={() => handleExport('pdf')} 
+            parties={parties}
+            selectedPartyId={selectedPartyId}
+            onPartyChange={setSelectedPartyId}
           />
 
           {/* Month Filter */}
@@ -303,22 +306,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {loading ? (
+          {loading && (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '5rem', gap: '1rem', color: 'var(--muted)' }}>
               <Loader2 size={28} className="animate-spin" style={{ color: 'var(--primary)' }} />
-              <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Loading entries…</span>
+              <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Updating statistics…</span>
             </div>
-          ) : (
-            <LedgerTable 
-              entries={entries} 
-              parties={parties} 
-              isAllParties={!selectedPartyId} 
-              businessName={businessName} 
-              readOnly={true} 
-              onEdit={() => {}} 
-              onDelete={async () => {}} 
-              onExport={handleExport} 
-            />
           )}
         </>
       )}
