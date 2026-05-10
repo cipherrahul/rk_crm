@@ -12,7 +12,7 @@ import { jsPDF } from 'jspdf'
 import { updateOwnPassword } from '@/app/actions/party'
 
 interface Entry {
-  id: string; date: string; mode: string; source: string; utr: string
+  id: string; date: string; mode: string; source: string; utr: string; remark?: string
   received: number; paid: number; commission_rate: number; party_id: string
   party_name?: string
   parties?: { name: string }
@@ -121,7 +121,7 @@ export default function PartyDashboardPage() {
   const handleExport = async (type: 'csv' | 'pdf' | 'image' | 'print') => {
     if (type === 'print') { window.print(); return }
     if (type === 'csv') {
-      let csv = 'Date,Mode,Source,UTR,Received,Commission,Net,Paid,Pending\n'
+      let csv = 'Date,Mode,Source,UTR,Remark,Received,Commission,Net,Paid,Pending\n'
       const entriesWithBalance = [...entries].map(e => ({ ...e }))
       const chronological = [...entriesWithBalance].sort((a, b) => {
         return new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -138,7 +138,7 @@ export default function PartyDashboardPage() {
       entriesWithBalance.forEach(e => {
         const com = (e.received * e.commission_rate) / 100
         const net = e.received - com
-        csv += `${e.date},${e.mode},${e.source},${e.utr},${e.received},${com.toFixed(2)},${net.toFixed(2)},${e.paid},${((e as any).runningPending).toFixed(2)}\n`
+        csv += `${e.date},${e.mode},${e.source},${e.utr},${e.remark || ''},${e.received},${com.toFixed(2)},${net.toFixed(2)},${e.paid},${((e as any).runningPending).toFixed(2)}\n`
       })
       const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `ledger_${partyName}.csv`, style: 'display:none' })
       document.body.appendChild(a); a.click(); document.body.removeChild(a)

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Edit, Trash2, FileSpreadsheet, Printer, FileText, Image as ImageIcon, Download, ChevronDown, Search, X } from 'lucide-react'
 
 interface Entry {
-  id: string; date: string; mode: string; source: string; utr: string
+  id: string; date: string; mode: string; source: string; utr: string; remark?: string
   received: number; paid: number; commission_rate: number; party_id: string
   party_name?: string
   parties?: { name: string }
@@ -162,7 +162,7 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
 
   const filtered = entriesWithBalance.filter(e => {
     const q = search.toLowerCase()
-    return !q || e.utr?.toLowerCase().includes(q) || e.mode?.toLowerCase().includes(q) || e.source?.toLowerCase().includes(q)
+    return !q || e.utr?.toLowerCase().includes(q) || e.mode?.toLowerCase().includes(q) || e.source?.toLowerCase().includes(q) || e.remark?.toLowerCase().includes(q)
   })
 
   return (
@@ -192,10 +192,11 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
           <table>
             <thead>
               <tr>
+                <th>Received</th>
                 <th>Date</th>
                 <th>Mode / Source</th>
                 <th>UTR / Ref</th>
-                <th>Received</th>
+                <th>Remark</th>
                 <th>Commission</th>
                 <th>Net</th>
                 <th>Paid</th>
@@ -210,13 +211,16 @@ export default function LedgerTable({ entries, parties, isAllParties, businessNa
                 const pending = (e as any).runningPending
                 return (
                   <tr key={e.id}>
+                    <td style={{ fontWeight: 600, color: 'var(--success)' }}>{fmt(e.received)}</td>
                     <td className="text-sm mono" style={{ whiteSpace: 'nowrap' }}>{e.date}</td>
                     <td>
                       <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{e.mode}</div>
                       <div className="text-xs text-muted">{e.source}</div>
                     </td>
                     <td className="mono text-sm" style={{ color: 'var(--muted)' }}>{e.utr || '—'}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--success)' }}>{fmt(e.received)}</td>
+                    <td className="text-xs" style={{ color: 'var(--muted)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.remark}>
+                      {e.remark || '—'}
+                    </td>
                     <td>
                       <div className="text-sm">{fmt(com)}</div>
                       <div className="text-xs text-muted">{e.commission_rate}%</div>

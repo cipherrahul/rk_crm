@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/client'
 
 interface Source { id: string; name: string }
 interface EntryData {
-  id?: string; date: string; mode: string; source: string; utr: string
+  id?: string; date: string; mode: string; source: string; utr: string; remark?: string
   received: number; paid: number; commission_rate: number; party_id?: string
 }
 
@@ -34,6 +34,7 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
     mode: 'Cash',
     source: '',
     utr: '',
+    remark: '',
     received: '',
     paid: '',
     commission_rate: defaultCommissionRate.toString()
@@ -52,6 +53,7 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
       const timeout = setTimeout(() => {
         setFormData({
           ...initialData,
+          remark: initialData.remark || '',
           received: initialData.received.toString(),
           paid: initialData.paid.toString(),
           commission_rate: initialData.commission_rate.toString()
@@ -99,7 +101,7 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
     setSubmitting(true)
     try {
       await onSubmit({ ...formData, party_id: partyId, received, paid, commission_rate: commRate })
-      if (!initialData) setFormData(f => ({ ...f, utr: '', received: '', paid: '' }))
+      if (!initialData) setFormData(f => ({ ...f, utr: '', remark: '', received: '', paid: '' }))
       toast(initialData ? 'Entry updated' : 'Entry added successfully', 'success')
     } catch (err: any) {
       toast(err.message || 'Failed to save entry', 'error')
@@ -179,6 +181,12 @@ export default function LedgerEntryForm({ partyId, partyName, defaultCommissionR
           )}
           {field('Paid (₹)', <IndianRupee size={14} />,
             <input type="number" step="0.01" placeholder="0.00" value={formData.paid} onChange={e => setFormData(f => ({ ...f, paid: e.target.value }))} />
+          )}
+        </div>
+
+        <div style={{ marginBottom: '1rem' }}>
+          {field('Remark / Note', <Calculator size={14} />,
+            <input type="text" placeholder="Add any extra details here..." value={formData.remark} onChange={e => setFormData(f => ({ ...f, remark: e.target.value }))} />
           )}
         </div>
 
